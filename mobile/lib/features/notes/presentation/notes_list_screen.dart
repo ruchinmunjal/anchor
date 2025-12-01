@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:anchor/features/notes/domain/note.dart';
 import 'package:anchor/core/widgets/confirm_dialog.dart';
+import 'package:anchor/core/widgets/quill_preview.dart';
 import 'notes_controller.dart';
 import '../../auth/presentation/auth_controller.dart';
 
@@ -193,17 +194,7 @@ class NoteCard extends StatelessWidget {
                   ),
                   if (note.content != null && note.content!.isNotEmpty) ...[
                     const SizedBox(height: 12),
-                    Text(
-                      note.content!,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                        height: 1.5,
-                        color: Theme.of(
-                          context,
-                        ).textTheme.bodyMedium?.color?.withValues(alpha: 0.8),
-                      ),
-                      maxLines: 6,
-                      overflow: TextOverflow.ellipsis,
-                    ),
+                    QuillPreview(content: note.content, maxLines: 6),
                   ],
                   const SizedBox(height: 16),
                   Row(

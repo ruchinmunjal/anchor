@@ -5,6 +5,7 @@ import 'package:lucide_icons/lucide_icons.dart';
 import 'package:uuid/uuid.dart';
 import 'package:anchor/features/notes/domain/note.dart';
 import 'package:anchor/core/widgets/confirm_dialog.dart';
+import 'package:anchor/core/widgets/rich_text_editor.dart';
 import '../data/repository/notes_repository.dart';
 
 class NoteEditScreen extends ConsumerStatefulWidget {
@@ -17,11 +18,13 @@ class NoteEditScreen extends ConsumerStatefulWidget {
 
 class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
   final _titleController = TextEditingController();
-  final _contentController = TextEditingController();
-  final _focusNode = FocusNode();
+  final _editorKey = GlobalKey<RichTextEditorState>();
   bool _isNew = true;
   bool _isDeleted = false;
+  bool _isLoaded = false;
+  bool _isEditing = false;
   Note? _existingNote;
+  String? _initialContent;
 
   @override
   void initState() {
@@ -29,7 +32,17 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
     if (widget.noteId != null) {
       _isNew = false;
       _loadNote();
+    } else {
+      // New notes start in edit mode
+      _isEditing = true;
+      _isLoaded = true;
     }
+  }
+
+  void _startEditing() {
+    setState(() {
+      _isEditing = true;
+    });
   }
 
   Future<void> _loadNote() async {
@@ -40,7 +53,8 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
       setState(() {
         _existingNote = note;
         _titleController.text = note.title;
-        _contentController.text = note.content ?? '';
+        _initialContent = note.content;
+        _isLoaded = true;
       });
     }
   }
@@ -48,16 +62,16 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
   @override
   void dispose() {
     _titleController.dispose();
-    _contentController.dispose();
-    _focusNode.dispose();
     super.dispose();
   }
 
   Future<void> _saveNote() async {
     final title = _titleController.text.trim();
-    final content = _contentController.text.trim();
+    final editorState = _editorKey.currentState;
+    final content = editorState?.getContent() ?? '';
+    final plainText = editorState?.getPlainText() ?? '';
 
-    if (title.isEmpty && content.isEmpty) return;
+    if (title.isEmpty && plainText.isEmpty) return;
 
     final repository = ref.read(notesRepositoryProvider);
 
@@ -117,14 +131,16 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop && !_isDeleted) {
+        if (didPop && !_isDeleted && _isEditing) {
           await _saveNote();
         }
       },
       child: Scaffold(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: theme.colorScheme.surface,
         appBar: AppBar(
           backgroundColor: Colors.transparent,
           leading: IconButton(
@@ -150,26 +166,34 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
             const SizedBox(width: 8),
           ],
         ),
+        floatingActionButton: !_isEditing
+            ? FloatingActionButton(
+                onPressed: _startEditing,
+                tooltip: 'Edit Note',
+                child: const Icon(LucideIcons.pencil),
+              )
+            : null,
         body: Hero(
           tag: 'note_${widget.noteId ?? 'new'}',
           child: Material(
             color: Colors.transparent,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: Column(
-                children: [
-                  TextField(
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: TextField(
                     controller: _titleController,
-                    style: Theme.of(context).textTheme.displaySmall?.copyWith(
+                    readOnly: !_isEditing,
+                    style: theme.textTheme.displaySmall?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onSurface,
+                      color: theme.colorScheme.onSurface,
                     ),
                     decoration: InputDecoration(
-                      hintText: 'Title',
+                      hintText: _isEditing ? 'Title' : null,
                       hintStyle: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurface.withValues(alpha: 0.3),
+                        color: theme.colorScheme.onSurface.withValues(
+                          alpha: 0.3,
+                        ),
                       ),
                       border: InputBorder.none,
                       contentPadding: const EdgeInsets.symmetric(vertical: 16),
@@ -177,34 +201,23 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
                     ),
                     textCapitalization: TextCapitalization.sentences,
                   ),
-                  Expanded(
-                    child: TextField(
-                      controller: _contentController,
-                      focusNode: _focusNode,
-                      style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        height: 1.6,
-                        fontSize: 18,
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'Start typing...',
-                        hintStyle: TextStyle(
-                          color: Theme.of(
-                            context,
-                          ).colorScheme.onSurface.withValues(alpha: 0.3),
-                        ),
-                        border: InputBorder.none,
-                        contentPadding: const EdgeInsets.symmetric(
-                          vertical: 24,
-                        ),
-                        filled: false,
-                      ),
-                      maxLines: null,
-                      expands: true,
-                      textCapitalization: TextCapitalization.sentences,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+                Expanded(
+                  child: _isLoaded
+                      ? RichTextEditor(
+                          key: _editorKey,
+                          initialContent: _initialContent,
+                          hintText: 'Start typing...',
+                          showToolbar: _isEditing,
+                          readOnly: !_isEditing,
+                          contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 24,
+                            vertical: 16,
+                          ),
+                        )
+                      : const Center(child: CircularProgressIndicator()),
+                ),
+              ],
             ),
           ),
         ),

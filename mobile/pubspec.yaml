@@ -56,12 +56,15 @@ dependencies:
   google_fonts: ^6.2.1
   flutter_staggered_grid_view: ^0.7.0
   uuid: ^4.4.0
-  intl: ^0.19.0
+  intl: ^0.20.2
   json_annotation: ^4.9.0
   equatable: ^2.0.5
   gap: ^3.0.1
   lucide_icons: ^0.257.0
   connectivity_plus: ^6.1.4
+  
+  # Rich Text Editor
+  flutter_quill: ^11.5.0
 
 dev_dependencies:
   flutter_test:

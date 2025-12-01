@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:anchor/features/notes/domain/note.dart';
 import 'package:anchor/core/widgets/confirm_dialog.dart';
+import 'package:anchor/core/widgets/quill_preview.dart';
 import 'notes_controller.dart';
 
 class TrashScreen extends ConsumerWidget {
@@ -153,14 +154,7 @@ class _TrashNoteCard extends StatelessWidget {
             ),
             if (note.content != null && note.content!.isNotEmpty) ...[
               const SizedBox(height: 8),
-              Text(
-                note.content!,
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.hintColor,
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-              ),
+              QuillPreview(content: note.content, maxLines: 2),
             ],
             const SizedBox(height: 12),
             Row(
