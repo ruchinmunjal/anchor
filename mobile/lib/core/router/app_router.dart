@@ -8,22 +8,53 @@ import '../../features/notes/presentation/notes_list_screen.dart';
 import '../../features/notes/presentation/note_edit_screen.dart';
 import '../../features/notes/presentation/trash_screen.dart';
 import '../presentation/splash_screen.dart';
+import '../presentation/server_config_screen.dart';
+import '../network/server_config_provider.dart';
 
 part 'app_router.g.dart';
 
 @riverpod
 GoRouter goRouter(Ref ref) {
   final authState = ref.watch(authControllerProvider);
+  final serverConfig = ref.watch(serverConfigProvider);
 
   return GoRouter(
     initialLocation: '/splash',
     redirect: (context, state) {
-      if (authState.isLoading) return '/splash';
+      final currentPath = state.matchedLocation;
+
+      // While loading server config, stay on splash
+      if (serverConfig.isLoading) {
+        return '/splash';
+      }
+
+      // Check if server is configured
+      final hasServerUrl = serverConfig.valueOrNull != null &&
+          serverConfig.valueOrNull!.isNotEmpty;
+
+      // Server config screen
+      if (currentPath == '/server-config') {
+        // If server is already configured, go to splash to check auth
+        if (hasServerUrl) {
+          return '/splash';
+        }
+        return null;
+      }
+
+      // If no server URL, redirect to server config
+      if (!hasServerUrl) {
+        return '/server-config';
+      }
+
+      // Now handle auth flow
+      if (authState.isLoading) {
+        return '/splash';
+      }
 
       final isLoggedIn = authState.valueOrNull != null;
-      final isLoggingIn = state.matchedLocation == '/login';
-      final isRegistering = state.matchedLocation == '/register';
-      final isSplash = state.matchedLocation == '/splash';
+      final isLoggingIn = currentPath == '/login';
+      final isRegistering = currentPath == '/register';
+      final isSplash = currentPath == '/splash';
 
       if (isSplash) {
         return isLoggedIn ? '/' : '/login';
@@ -43,6 +74,10 @@ GoRouter goRouter(Ref ref) {
       GoRoute(
         path: '/splash',
         builder: (context, state) => const SplashScreen(),
+      ),
+      GoRoute(
+        path: '/server-config',
+        builder: (context, state) => const ServerConfigScreen(),
       ),
       GoRoute(
         path: '/',

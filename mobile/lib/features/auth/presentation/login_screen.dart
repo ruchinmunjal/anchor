@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:anchor/core/network/server_config_provider.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -45,6 +46,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       }
     });
 
+    final serverUrl = ref.watch(serverUrlProvider);
+
     return Scaffold(
       body: Center(
         child: SingleChildScrollView(
@@ -55,6 +58,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                // Server URL indicator
+                _ServerUrlChip(
+                  serverUrl: serverUrl,
+                  onChangeServer: () async {
+                    await ref.read(serverConfigProvider.notifier).clearServerUrl();
+                  },
+                ),
+                const SizedBox(height: 24),
                 Text(
                   'Welcome Back',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
@@ -130,6 +141,71 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _ServerUrlChip extends StatelessWidget {
+  final String? serverUrl;
+  final VoidCallback onChangeServer;
+
+  const _ServerUrlChip({
+    required this.serverUrl,
+    required this.onChangeServer,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    if (serverUrl == null) return const SizedBox.shrink();
+
+    // Extract host from URL for display
+    String displayUrl = serverUrl!;
+    try {
+      final uri = Uri.parse(serverUrl!);
+      displayUrl = uri.host;
+      if (uri.port != 80 && uri.port != 443) {
+        displayUrl += ':${uri.port}';
+      }
+    } catch (_) {}
+
+    return Center(
+      child: InkWell(
+        onTap: onChangeServer,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          decoration: BoxDecoration(
+            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                LucideIcons.server,
+                size: 14,
+                color: theme.colorScheme.primary,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                displayUrl,
+                style: TextStyle(
+                  fontSize: 13,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(width: 4),
+              Icon(
+                LucideIcons.chevronDown,
+                size: 14,
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              ),
+            ],
           ),
         ),
       ),

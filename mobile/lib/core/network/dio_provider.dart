@@ -3,19 +3,22 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'server_config_provider.dart';
 
 part 'dio_provider.g.dart';
 
 @riverpod
 Dio dio(Ref ref) {
+  final serverUrl = ref.watch(serverUrlProvider);
   final dio = Dio();
 
-  // Set default base URL
-  String baseUrl = 'http://192.168.10.155:3000';
+  // Set base URL from server config
+  if (serverUrl != null && serverUrl.isNotEmpty) {
+    dio.options.baseUrl = serverUrl;
+  }
 
-  dio.options.baseUrl = baseUrl;
-  dio.options.connectTimeout = const Duration(seconds: 5);
-  dio.options.receiveTimeout = const Duration(seconds: 3);
+  dio.options.connectTimeout = const Duration(seconds: 10);
+  dio.options.receiveTimeout = const Duration(seconds: 10);
   dio.options.headers = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',

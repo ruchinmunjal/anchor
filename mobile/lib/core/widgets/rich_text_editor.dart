@@ -104,9 +104,10 @@ class RichTextEditorState extends State<RichTextEditor> {
       _isNumberedList =
           style.attributes.containsKey(Attribute.list.key) &&
           style.attributes[Attribute.list.key]?.value == 'ordered';
+      final listValue = style.attributes[Attribute.list.key]?.value;
       _isChecklist =
           style.attributes.containsKey(Attribute.list.key) &&
-          style.attributes[Attribute.list.key]?.value == 'checked';
+          (listValue == 'checked' || listValue == 'unchecked');
       _isQuote = style.attributes.containsKey(Attribute.blockQuote.key);
       _isCode = style.attributes.containsKey(Attribute.codeBlock.key);
 
@@ -326,10 +327,10 @@ class RichTextEditorState extends State<RichTextEditor> {
             // List group
             _buildToolbarGroup([
               _ToolbarButton(
-                icon: LucideIcons.list,
-                isActive: _isList,
-                onTap: () => _toggleList(Attribute.ul),
-                tooltip: 'Bullet List',
+                icon: LucideIcons.listChecks,
+                isActive: _isChecklist,
+                onTap: () => _toggleList(Attribute.unchecked),
+                tooltip: 'Checklist',
               ),
               _ToolbarButton(
                 icon: LucideIcons.listOrdered,
@@ -338,10 +339,10 @@ class RichTextEditorState extends State<RichTextEditor> {
                 tooltip: 'Numbered List',
               ),
               _ToolbarButton(
-                icon: LucideIcons.listChecks,
-                isActive: _isChecklist,
-                onTap: () => _toggleList(Attribute.checked),
-                tooltip: 'Checklist',
+                icon: LucideIcons.list,
+                isActive: _isList,
+                onTap: () => _toggleList(Attribute.ul),
+                tooltip: 'Bullet List',
               ),
             ], theme),
 
@@ -500,8 +501,18 @@ class RichTextEditorState extends State<RichTextEditor> {
   void _toggleList(Attribute attribute) {
     final style = _controller.getSelectionStyle();
     final currentList = style.attributes[Attribute.list.key];
+    final currentValue = currentList?.value;
 
-    if (currentList?.value == attribute.value) {
+    // For checklist, check both 'checked' and 'unchecked' values
+    final isChecklist = attribute == Attribute.unchecked;
+    final isCurrentlyChecklist =
+        currentValue == 'checked' || currentValue == 'unchecked';
+
+    if (isChecklist && isCurrentlyChecklist) {
+      // Toggle off checklist
+      _controller.formatSelection(Attribute.clone(Attribute.list, null));
+    } else if (currentValue == attribute.value) {
+      // Toggle off same list type
       _controller.formatSelection(Attribute.clone(Attribute.list, null));
     } else {
       _controller.formatSelection(attribute);
