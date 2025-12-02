@@ -1,12 +1,17 @@
+import 'package:anchor/core/router/app_routes.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import '../network/server_config_provider.dart';
+import '../widgets/app_snackbar.dart';
 
 class ServerConfigScreen extends ConsumerStatefulWidget {
-  const ServerConfigScreen({super.key});
+  final String? initialUrl;
+
+  const ServerConfigScreen({super.key, this.initialUrl});
 
   @override
   ConsumerState<ServerConfigScreen> createState() => _ServerConfigScreenState();
@@ -15,8 +20,20 @@ class ServerConfigScreen extends ConsumerStatefulWidget {
 class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
   final _urlController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
-  bool _isLoading = false;
+  bool _isTesting = false;
+  bool _isConnecting = false;
   String? _error;
+
+  bool get _isLoading => _isTesting || _isConnecting;
+
+  @override
+  void initState() {
+    super.initState();
+    final initial = widget.initialUrl;
+    if (initial != null && initial.isNotEmpty) {
+      _urlController.text = initial;
+    }
+  }
 
   @override
   void dispose() {
@@ -24,59 +41,113 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
     super.dispose();
   }
 
-  Future<void> _connect() async {
-    if (!_formKey.currentState!.validate()) return;
-
-    setState(() {
-      _isLoading = true;
-      _error = null;
-    });
-
-    try {
-      String url = _urlController.text.trim();
-      // Normalize URL: remove trailing slash
-      if (url.endsWith('/')) {
-        url = url.substring(0, url.length - 1);
-      }
-
-      // Validate server by calling health endpoint
-      final dio = Dio();
-      dio.options.connectTimeout = const Duration(seconds: 10);
-      dio.options.receiveTimeout = const Duration(seconds: 10);
-
-      final response = await dio.get('$url/health');
-
-      if (response.statusCode == 200 && response.data['app'] == 'anchor') {
-        // Server is valid, save the URL
-        await ref.read(serverConfigProvider.notifier).setServerUrl(url);
-      } else {
-        setState(() {
-          _error = 'Invalid server response. Is this an Anchor server?';
-        });
-      }
-    } on DioException catch (e) {
-      String errorMessage;
+  void _handleError(Object e) {
+    String errorMessage;
+    if (e is DioException) {
       if (e.type == DioExceptionType.connectionTimeout ||
           e.type == DioExceptionType.receiveTimeout) {
         errorMessage = 'Connection timed out. Check the URL and try again.';
       } else if (e.type == DioExceptionType.connectionError) {
         errorMessage = 'Could not connect to server. Check the URL.';
-      } else if (e.response?.statusCode == 404) {
-        errorMessage = 'Server found but /health endpoint not available.';
       } else {
-        errorMessage = 'Failed to connect: ${e.message}';
+        errorMessage = 'Failed to connect to server';
       }
-      setState(() {
-        _error = errorMessage;
-      });
+    } else {
+      errorMessage = 'Failed to connect to server';
+    }
+    setState(() {
+      _error = errorMessage;
+    });
+  }
+
+  Future<String?> _prepareUrl() async {
+    if (!_formKey.currentState!.validate()) return null;
+    String url = _urlController.text.trim();
+    if (url.endsWith('/')) {
+      url = url.substring(0, url.length - 1);
+    }
+    return url;
+  }
+
+  Dio _getDio() {
+    final dio = Dio();
+    dio.options.connectTimeout = const Duration(seconds: 10);
+    dio.options.receiveTimeout = const Duration(seconds: 10);
+    return dio;
+  }
+
+  Future<void> _testConnection() async {
+    final url = await _prepareUrl();
+    if (url == null) return;
+
+    setState(() {
+      _isTesting = true;
+      _error = null;
+    });
+
+    try {
+      final dio = _getDio();
+      final response = await dio.get('$url/health');
+
+      if (response.statusCode == 200 && response.data['app'] == 'anchor') {
+        final version = response.data['version'] ?? 'Unknown';
+        if (mounted) {
+          AppSnackbar.showSuccess(
+            context,
+            message: 'Server is running! Version: $version',
+          );
+        }
+      } else {
+        setState(() {
+          _error = 'Invalid server response. Is this an Anchor server?';
+        });
+      }
     } catch (e) {
-      setState(() {
-        _error = 'Failed to connect to server';
-      });
+      _handleError(e);
     } finally {
       if (mounted) {
         setState(() {
-          _isLoading = false;
+          _isTesting = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _connect() async {
+    final url = await _prepareUrl();
+    if (url == null) return;
+
+    setState(() {
+      _isConnecting = true;
+      _error = null;
+    });
+
+    try {
+      final dio = _getDio();
+      final response = await dio.get('$url/health');
+
+      if (response.statusCode == 200 && response.data['app'] == 'anchor') {
+        // Server is valid, save the URL
+        await ref.read(serverConfigProvider.notifier).setServerUrl(url);
+        // Navigate back if we came from another screen (editing mode)
+        if (mounted) {
+          if (widget.initialUrl != null) {
+            context.pop();
+          } else {
+            context.go(AppRoutes.login);
+          }
+        }
+      } else {
+        setState(() {
+          _error = 'Invalid server response. Is this an Anchor server?';
+        });
+      }
+    } catch (e) {
+      _handleError(e);
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
         });
       }
     }
@@ -119,21 +190,58 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  // Icon
-                  Container(
-                    width: 80,
-                    height: 80,
-                    decoration: BoxDecoration(
-                      color: theme.colorScheme.primaryContainer,
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(
-                      LucideIcons.server,
-                      size: 40,
-                      color: theme.colorScheme.primary,
+                  Center(
+                    child: Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        Transform.rotate(
+                          angle: -0.1,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              color: theme.colorScheme.primaryContainer
+                                  .withValues(alpha: 0.5),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                          ),
+                        ),
+                        Transform.rotate(
+                          angle: 0.1,
+                          child: Container(
+                            width: 100,
+                            height: 100,
+                            decoration: BoxDecoration(
+                              gradient: LinearGradient(
+                                colors: [
+                                  theme.colorScheme.primary,
+                                  theme.colorScheme.secondary,
+                                ],
+                                begin: Alignment.topLeft,
+                                end: Alignment.bottomRight,
+                              ),
+                              borderRadius: BorderRadius.circular(30),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: theme.colorScheme.primary.withValues(
+                                    alpha: 0.3,
+                                  ),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              LucideIcons.anchor,
+                              size: 50,
+                              color: theme.colorScheme.onPrimary,
+                            ),
+                          ),
+                        ),
+                      ],
                     ),
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 48),
 
                   // Title
                   Text(
@@ -190,26 +298,54 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
                   ],
                   const SizedBox(height: 24),
 
-                  // Connect Button
-                  FilledButton.icon(
-                    onPressed: _isLoading ? null : _connect,
-                    icon: _isLoading
-                        ? const SizedBox(
-                            width: 20,
-                            height: 20,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              color: Colors.white,
+                  // Actions
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: _isLoading ? null : _testConnection,
+                          icon: _isTesting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                  ),
+                                )
+                              : const Icon(LucideIcons.wifi),
+                          label: const Text('Test'),
+                          style: OutlinedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
                             ),
-                          )
-                        : const Icon(LucideIcons.arrowRight),
-                    label: Text(_isLoading ? 'Connecting...' : 'Connect'),
-                    style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: FilledButton.icon(
+                          onPressed: _isLoading ? null : _connect,
+                          icon: _isConnecting
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(LucideIcons.arrowRight),
+                          label: const Text('Connect'),
+                          style: FilledButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(14),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 32),
 

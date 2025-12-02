@@ -73,3 +73,6 @@ pnpm run test:e2e
 - `GET /api/notes/:id` - Get a specific note
 - `PATCH /api/notes/:id` - Update a note
 - `DELETE /api/notes/:id` - Delete a note
+- `POST /api/notes/sync` - Sync notes with client
+- `PATCH /api/notes/:id/restore` - Restore a note from trash
+- `DELETE /api/notes/:id/permanent` - Permanently delete a note

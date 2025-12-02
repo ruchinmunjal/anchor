@@ -306,6 +306,14 @@ class NotesRepository {
     }
   }
 
+  // Clear all local data
+  Future<void> clearAll() async {
+    // Clear all notes from DB
+    await _db.delete(_db.notes).go();
+    // Clear sync timestamp
+    await _storage.delete(key: _lastSyncKey);
+  }
+
   domain.Note _mapToDomain(Note row) {
     return domain.Note(
       id: row.id,

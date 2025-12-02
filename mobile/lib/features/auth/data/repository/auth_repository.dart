@@ -35,7 +35,9 @@ class AuthRepository {
   }
 
   Future<void> logout() async {
-    await _storage.deleteAll();
+    await _storage.delete(key: 'access_token');
+    await _storage.delete(key: 'user_id');
+    await _storage.delete(key: 'user_email');
   }
 
   Future<String?> getToken() {

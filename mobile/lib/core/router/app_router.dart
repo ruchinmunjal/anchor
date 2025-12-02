@@ -1,7 +1,7 @@
+import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-import '../../features/auth/presentation/auth_controller.dart';
 import '../../features/auth/presentation/login_screen.dart';
 import '../../features/auth/presentation/register_screen.dart';
 import '../../features/notes/presentation/notes_list_screen.dart';
@@ -9,102 +9,133 @@ import '../../features/notes/presentation/note_edit_screen.dart';
 import '../../features/notes/presentation/trash_screen.dart';
 import '../presentation/splash_screen.dart';
 import '../presentation/server_config_screen.dart';
+import '../../features/auth/presentation/auth_controller.dart';
 import '../network/server_config_provider.dart';
+import 'app_routes.dart';
 
 part 'app_router.g.dart';
 
 @riverpod
 GoRouter goRouter(Ref ref) {
-  final authState = ref.watch(authControllerProvider);
-  final serverConfig = ref.watch(serverConfigProvider);
+  final routerKey = GlobalKey<NavigatorState>(debugLabel: 'routerKey');
+
+  // Create listenables for auth and config state
+  final authStateNotifier = ValueNotifier<AsyncValue<void>>(
+    const AsyncLoading(),
+  );
+  final configStateNotifier = ValueNotifier<AsyncValue<void>>(
+    const AsyncLoading(),
+  );
+
+  // Update notifiers when providers change
+  ref.listen(
+    authControllerProvider,
+    (_, next) => authStateNotifier.value = next,
+  );
+  ref.listen(
+    serverConfigProvider,
+    (_, next) => configStateNotifier.value = next,
+  );
+
+  // Merge listenables to trigger router refresh
+  final listenable = Listenable.merge([authStateNotifier, configStateNotifier]);
+
+  // Clean up notifiers when the provider is disposed
+  ref.onDispose(() {
+    authStateNotifier.dispose();
+    configStateNotifier.dispose();
+  });
 
   return GoRouter(
-    initialLocation: '/splash',
-    redirect: (context, state) {
-      final currentPath = state.matchedLocation;
-
-      // While loading server config, stay on splash
-      if (serverConfig.isLoading) {
-        return '/splash';
-      }
-
-      // Check if server is configured
-      final hasServerUrl = serverConfig.valueOrNull != null &&
-          serverConfig.valueOrNull!.isNotEmpty;
-
-      // Server config screen
-      if (currentPath == '/server-config') {
-        // If server is already configured, go to splash to check auth
-        if (hasServerUrl) {
-          return '/splash';
-        }
-        return null;
-      }
-
-      // If no server URL, redirect to server config
-      if (!hasServerUrl) {
-        return '/server-config';
-      }
-
-      // Now handle auth flow
-      if (authState.isLoading) {
-        return '/splash';
-      }
-
-      final isLoggedIn = authState.valueOrNull != null;
-      final isLoggingIn = currentPath == '/login';
-      final isRegistering = currentPath == '/register';
-      final isSplash = currentPath == '/splash';
-
-      if (isSplash) {
-        return isLoggedIn ? '/' : '/login';
-      }
-
-      if (!isLoggedIn && !isLoggingIn && !isRegistering) {
-        return '/login';
-      }
-
-      if (isLoggedIn && (isLoggingIn || isRegistering)) {
-        return '/';
-      }
-
-      return null;
-    },
+    navigatorKey: routerKey,
+    initialLocation: AppRoutes.splash,
+    refreshListenable: listenable,
+    debugLogDiagnostics: true,
     routes: [
       GoRoute(
-        path: '/splash',
+        path: AppRoutes.splash,
         builder: (context, state) => const SplashScreen(),
       ),
       GoRoute(
-        path: '/server-config',
-        builder: (context, state) => const ServerConfigScreen(),
+        path: AppRoutes.serverConfig,
+        builder: (context, state) {
+          final initialUrl = state.extra as String?;
+          return ServerConfigScreen(initialUrl: initialUrl);
+        },
       ),
       GoRoute(
-        path: '/',
+        path: AppRoutes.home,
         builder: (context, state) => const NotesListScreen(),
         routes: [
           GoRoute(
-            path: 'note/new',
+            path: AppRoutes.noteNew,
             builder: (context, state) => const NoteEditScreen(),
           ),
           GoRoute(
-            path: 'note/:id',
+            path: AppRoutes.noteEdit,
             builder: (context, state) {
               final id = state.pathParameters['id'];
               return NoteEditScreen(noteId: id);
             },
           ),
           GoRoute(
-            path: 'trash',
+            path: AppRoutes.trash,
             builder: (context, state) => const TrashScreen(),
           ),
         ],
       ),
-      GoRoute(path: '/login', builder: (context, state) => const LoginScreen()),
       GoRoute(
-        path: '/register',
+        path: AppRoutes.login,
+        builder: (context, state) => const LoginScreen(),
+      ),
+      GoRoute(
+        path: AppRoutes.register,
         builder: (context, state) => const RegisterScreen(),
       ),
     ],
+    redirect: (context, state) {
+      final authState = ref.read(authControllerProvider);
+      final configState = ref.read(serverConfigProvider);
+
+      final isAuthLoading = authState.isLoading;
+      final isConfigLoading = configState.isLoading;
+
+      // If still loading initial state, stay on splash.
+      // This also prevents redirecting while a specialized loading state
+      // (like signing in) is active, preserving user input on the screen.
+      if (isAuthLoading || isConfigLoading) {
+        return null;
+      }
+
+      final hasServerUrl = configState.valueOrNull?.isNotEmpty == true;
+      final isLoggedIn = authState.valueOrNull != null;
+
+      final isSplash = state.matchedLocation == AppRoutes.splash;
+      final isServerConfig = state.matchedLocation == AppRoutes.serverConfig;
+      final isLogin = state.matchedLocation == AppRoutes.login;
+      final isRegister = state.matchedLocation == AppRoutes.register;
+
+      // 1. Server Config Check
+      if (!hasServerUrl) {
+        return isServerConfig ? null : AppRoutes.serverConfig;
+      }
+
+      // 2. Auth Check
+      if (!isLoggedIn) {
+        // Allow login, register, and server config screens
+        if (isLogin || isRegister || isServerConfig) {
+          return null;
+        }
+        return AppRoutes.login;
+      }
+
+      // 3. Logged In
+      // Redirect splash, login, register to home
+      if (isSplash || isLogin || isRegister) {
+        return AppRoutes.home;
+      }
+
+      return null;
+    },
   );
 }

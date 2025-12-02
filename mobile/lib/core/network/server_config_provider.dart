@@ -12,7 +12,6 @@ class ServerConfig extends _$ServerConfig {
 
   @override
   Future<String?> build() async {
-    await _storage.delete(key: _serverUrlKey);
     return await _storage.read(key: _serverUrlKey);
   }
 

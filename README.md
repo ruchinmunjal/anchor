@@ -35,7 +35,6 @@ This repository includes:
 - Dio (network client)
 - json_serializable (data models)
 - connectivity_plus (online/offline detection)
-- workmanager (background sync tasks)
 - GoRouter (navigation)
 - Flutter Quill (rich text editor)
 
@@ -51,7 +50,7 @@ This repository includes:
 
 ### Backend (Nest.js)
 - Nest.js (modular server framework)
-- Prisma or TypeORM (ORM)
+- Prisma (ORM)
 - PostgreSQL (database)
 - JWT authentication
 - REST API endpoints
@@ -127,7 +126,6 @@ anchor/
 - Drift (mobile) and IndexedDB (web) store notes locally.  
 - All edits work offline.  
 - Sync is triggered automatically on connectivity change or at periodic intervals.  
-- Background sync (mobile) is powered by workmanager.  
 - Conflicts use last‑write‑wins logic.  
 
 ---

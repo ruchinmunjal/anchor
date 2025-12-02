@@ -1,7 +1,9 @@
+import 'package:anchor/core/router/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
+import 'package:anchor/core/widgets/app_snackbar.dart';
 import 'auth_controller.dart';
 
 class RegisterScreen extends ConsumerStatefulWidget {
@@ -27,15 +29,19 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
   Future<void> _register() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authControllerProvider.notifier).register(
-            _emailController.text,
-            _passwordController.text,
-          );
+      await ref
+          .read(authControllerProvider.notifier)
+          .register(_emailController.text, _passwordController.text);
+
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful! Please login.')),
-        );
-        context.go('/login');
+        final state = ref.read(authControllerProvider);
+        if (!state.hasError) {
+          AppSnackbar.showSuccess(
+            context,
+            message: 'Registration successful! Please login.',
+          );
+          context.go(AppRoutes.login);
+        }
       }
     }
   }
@@ -47,9 +53,7 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
 
     ref.listen(authControllerProvider, (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error.toString())),
-        );
+        AppSnackbar.showError(context, message: next.error.toString());
       }
     });
 
@@ -73,16 +77,16 @@ class _RegisterScreenState extends ConsumerState<RegisterScreen> {
                 Text(
                   'Create Account',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Start capturing your ideas',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).hintColor,
-                      ),
+                    color: Theme.of(context).hintColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),

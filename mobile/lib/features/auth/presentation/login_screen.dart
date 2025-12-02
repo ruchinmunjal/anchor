@@ -1,8 +1,10 @@
+import 'package:anchor/core/router/app_routes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons/lucide_icons.dart';
 import 'package:anchor/core/network/server_config_provider.dart';
+import 'package:anchor/core/widgets/app_snackbar.dart';
 import 'auth_controller.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -26,10 +28,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
   Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
-      await ref.read(authControllerProvider.notifier).login(
-            _emailController.text,
-            _passwordController.text,
-          );
+      await ref
+          .read(authControllerProvider.notifier)
+          .login(_emailController.text, _passwordController.text);
     }
   }
 
@@ -40,10 +41,9 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     ref.listen(authControllerProvider, (previous, next) {
       if (next.hasError) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(next.error.toString())),
-        );
+        AppSnackbar.showError(context, message: next.error.toString());
       }
+      // Navigation is handled by the router redirect logic
     });
 
     final serverUrl = ref.watch(serverUrlProvider);
@@ -61,24 +61,24 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 // Server URL indicator
                 _ServerUrlChip(
                   serverUrl: serverUrl,
-                  onChangeServer: () async {
-                    await ref.read(serverConfigProvider.notifier).clearServerUrl();
+                  onChangeServer: () {
+                    context.push(AppRoutes.serverConfig, extra: serverUrl);
                   },
                 ),
                 const SizedBox(height: 24),
                 Text(
                   'Welcome Back',
                   style: Theme.of(context).textTheme.displaySmall?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
+                    fontWeight: FontWeight.bold,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   'Sign in to continue',
                   style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                        color: Theme.of(context).hintColor,
-                      ),
+                    color: Theme.of(context).hintColor,
+                  ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
@@ -130,13 +130,16 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ? const SizedBox(
                           height: 20,
                           width: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
                         )
                       : const Text('Sign In'),
                 ),
                 const SizedBox(height: 16),
                 TextButton(
-                  onPressed: () => context.push('/register'),
+                  onPressed: () => context.push(AppRoutes.register),
                   child: const Text('Create an account'),
                 ),
               ],
@@ -152,10 +155,7 @@ class _ServerUrlChip extends StatelessWidget {
   final String? serverUrl;
   final VoidCallback onChangeServer;
 
-  const _ServerUrlChip({
-    required this.serverUrl,
-    required this.onChangeServer,
-  });
+  const _ServerUrlChip({required this.serverUrl, required this.onChangeServer});
 
   @override
   Widget build(BuildContext context) {
@@ -180,7 +180,9 @@ class _ServerUrlChip extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
           decoration: BoxDecoration(
-            color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+            color: theme.colorScheme.surfaceContainerHighest.withValues(
+              alpha: 0.5,
+            ),
             borderRadius: BorderRadius.circular(20),
           ),
           child: Row(

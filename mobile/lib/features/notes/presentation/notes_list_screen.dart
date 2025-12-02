@@ -23,8 +23,9 @@ class NotesListScreen extends ConsumerWidget {
             'Are you sure you want to log out? Your unsynced notes will stay safe on this device.',
         cancelText: 'Stay',
         confirmText: 'Log Out',
-        onConfirm: () {
-          ref.read(authControllerProvider.notifier).logout();
+        onConfirm: () async {
+          await ref.read(authControllerProvider.notifier).logout();
+          // Navigation is handled by the router redirect logic
         },
       ),
     );
