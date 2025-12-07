@@ -1,0 +1,158 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-dm-sans);
+  --font-serif: var(--font-playfair);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+/* Anchor Theme - Deep Ocean & Sand */
+:root {
+  --radius: 1rem;
+
+  /* Light Theme - matching mobile app */
+  --background: #F0F4F8;
+  /* Cool Gray/Blue tint */
+  --foreground: #2D3142;
+  /* Dark Slate */
+
+  --card: #FFFFFF;
+  --card-foreground: #2D3142;
+
+  --popover: #FFFFFF;
+  --popover-foreground: #2D3142;
+
+  --primary: #2D3142;
+  /* Dark Slate */
+  --primary-foreground: #FFFFFF;
+
+  --secondary: #4F5D75;
+  /* Slate Blue */
+  --secondary-foreground: #FFFFFF;
+
+  --muted: #E8ECF1;
+  --muted-foreground: #4F5D75;
+
+  --accent: #EF8354;
+  /* Burnt Orange */
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #E53E3E;
+
+  --border: #D8DEE6;
+  --input: #D8DEE6;
+  --ring: #EF8354;
+
+  --chart-1: #EF8354;
+  --chart-2: #4F5D75;
+  --chart-3: #2D3142;
+  --chart-4: #6B7A8F;
+  --chart-5: #9CA8B8;
+
+  --sidebar: #FFFFFF;
+  --sidebar-foreground: #2D3142;
+  --sidebar-primary: #2D3142;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #F0F4F8;
+  --sidebar-accent-foreground: #2D3142;
+  --sidebar-border: #E8ECF1;
+  --sidebar-ring: #EF8354;
+}
+
+.dark {
+  /* Dark Theme - matching mobile app */
+  --background: #1C1E26;
+  /* Deep Blue-Black */
+  --foreground: #EAEAEA;
+  /* Off-white */
+
+  --card: #262A36;
+  --card-foreground: #EAEAEA;
+
+  --popover: #262A36;
+  --popover-foreground: #EAEAEA;
+
+  --primary: #EAEAEA;
+  --primary-foreground: #1C1E26;
+
+  --secondary: #4F5D75;
+  --secondary-foreground: #EAEAEA;
+
+  --muted: #2D3142;
+  --muted-foreground: #9CA8B8;
+
+  --accent: #EF8354;
+  /* Burnt Orange stays the same */
+  --accent-foreground: #FFFFFF;
+
+  --destructive: #FC8181;
+
+  --border: #3A3F4B;
+  --input: #3A3F4B;
+  --ring: #EF8354;
+
+  --chart-1: #EF8354;
+  --chart-2: #6B7A8F;
+  --chart-3: #9CA8B8;
+  --chart-4: #4F5D75;
+  --chart-5: #2D3142;
+
+  --sidebar: #262A36;
+  --sidebar-foreground: #EAEAEA;
+  --sidebar-primary: #EF8354;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #2D3142;
+  --sidebar-accent-foreground: #EAEAEA;
+  --sidebar-border: #3A3F4B;
+  --sidebar-ring: #EF8354;
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+  }
+
+  /* Typography */
+  /* Playfair font is only used for main headings via font-serif class */
+}
