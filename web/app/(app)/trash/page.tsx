@@ -19,6 +19,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
 import type { Note } from "@/lib/types";
+import { deltaToFullPlainText } from "@/lib/quill";
 
 export default function TrashPage() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -56,7 +57,7 @@ export default function TrashPage() {
     const query = searchQuery.toLowerCase();
     return (
       note.title.toLowerCase().includes(query) ||
-      note.content?.toLowerCase().includes(query)
+      deltaToFullPlainText(note.content).toLowerCase().includes(query)
     );
   });
 

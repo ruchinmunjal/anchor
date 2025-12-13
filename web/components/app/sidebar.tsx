@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useSearchParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import {
   Anchor,
@@ -51,6 +51,7 @@ export function Sidebar({
   onToggleCollapse,
 }: SidebarProps) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { theme, setTheme } = useTheme();
   const { logout, user } = useAuth();
   const [tagsOpen, setTagsOpen] = useState(true);
@@ -59,6 +60,9 @@ export function Sidebar({
     queryKey: ["tags"],
     queryFn: getTags,
   });
+
+  // Extract the currently selected tag id from URL param, e.g. /notes?tagId=tagid123
+  const tagIdParam = searchParams?.get("tagId");
 
   const navItems = [
     {
@@ -202,7 +206,7 @@ export function Sidebar({
         <ScrollArea className="flex-1 px-3 py-2">
           <div className="space-y-1">
             {navItems.map((item) => {
-              const isActive = pathname === item.href;
+              const isActive = pathname === item.href && !(item.href === "/notes" && tagIdParam);
               const NavLink = (
                 <Link
                   key={item.href}
@@ -217,6 +221,7 @@ export function Sidebar({
                       ? "bg-sidebar-accent text-sidebar-accent-foreground"
                       : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                   )}
+                  aria-current={isActive ? "page" : undefined}
                 >
                   <item.icon className="h-4 w-4 flex-shrink-0" />
                   {!isCollapsed && item.label}
@@ -273,23 +278,30 @@ export function Sidebar({
                     />
                   </CollapsibleTrigger>
                   <CollapsibleContent className="space-y-1 overflow-hidden data-[state=closed]:animate-collapsible-up data-[state=open]:animate-collapsible-down">
-                    {tags.map((tag) => (
-                      <Link
-                        key={tag.id}
-                        href={`/notes?tagId=${tag.id}`}
-                        onClick={handleNavClick}
-                        className={cn(
-                          "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
-                          "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
-                        )}
-                      >
-                        <LucideHash
-                          className="h-3 w-3"
-                          style={{ color: tag.color || "var(--accent)" }}
-                        />
-                        <span className="flex-1 truncate">{tag.name}</span>
-                      </Link>
-                    ))}
+                    {tags.map((tag) => {
+                      // Active if we are in /notes?tagId=this_tag.id
+                      const isTagActive = pathname === "/notes" && tagIdParam === String(tag.id);
+                      return (
+                        <Link
+                          key={tag.id}
+                          href={`/notes?tagId=${tag.id}`}
+                          onClick={handleNavClick}
+                          className={cn(
+                            "flex items-center gap-3 rounded-xl px-3 py-2 text-sm transition-colors",
+                            isTagActive
+                              ? "bg-sidebar-accent text-sidebar-accent-foreground"
+                              : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                          )}
+                          aria-current={isTagActive ? "page" : undefined}
+                        >
+                          <LucideHash
+                            className="h-3 w-3"
+                            style={{ color: tag.color || "var(--accent)" }}
+                          />
+                          <span className="flex-1 truncate">{tag.name}</span>
+                        </Link>
+                      );
+                    })}
                   </CollapsibleContent>
                 </Collapsible>
               )}

@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import Link from "next/link";
+import { deltaToFullPlainText } from "@/lib/quill";
 
 export default function NotesPage() {
   const searchParams = useSearchParams();
@@ -35,7 +36,7 @@ export default function NotesPage() {
     const query = searchQuery.toLowerCase();
     return notes.filter((note) => {
       const titleMatch = note.title.toLowerCase().includes(query);
-      const contentMatch = note.content?.toLowerCase().includes(query);
+      const contentMatch = deltaToFullPlainText(note.content).toLowerCase().includes(query);
       return titleMatch || contentMatch;
     });
   }, [notes, searchQuery]);

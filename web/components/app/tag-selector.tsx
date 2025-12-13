@@ -71,18 +71,29 @@ export function TagSelector({
         <Badge
           key={tag.id}
           variant="secondary"
-          className="gap-1.5 pr-1"
+          className="gap-1.5 px-3 py-1.5 text-xs font-medium border border-border/30 hover:border-border/50 transition-all duration-150"
           style={{
-            backgroundColor: tag.color ? `${tag.color}20` : undefined,
+            backgroundColor: tag.color ? `${tag.color}12` : undefined,
             color: tag.color || undefined,
+            borderColor: tag.color ? `${tag.color}30` : undefined,
           }}
         >
+          <div
+            className="w-2 h-2 rounded-full shrink-0 ring-1 ring-white/20"
+            style={{
+              backgroundColor: tag.color || "var(--accent)",
+            }}
+          />
           {tag.name}
           {!readOnly && (
             <button
               type="button"
-              onClick={() => toggleTag(tag.id)}
-              className="ml-1 rounded-full hover:bg-foreground/10 p-0.5"
+              onClick={(e) => {
+                e.stopPropagation();
+                toggleTag(tag.id);
+              }}
+              className="ml-0.5 rounded-full hover:bg-foreground/15 p-0.5 transition-all duration-150 hover:scale-110"
+              aria-label={`Remove ${tag.name} tag`}
             >
               <X className="h-3 w-3" />
             </button>
@@ -96,78 +107,106 @@ export function TagSelector({
             <Button
               variant="ghost"
               size="sm"
-              className="h-7 gap-1 text-muted-foreground hover:text-foreground"
+              className="h-8 gap-1.5 text-sm text-muted-foreground hover:text-foreground hover:bg-accent/5 border border-transparent hover:border-accent/20 transition-all duration-200"
             >
-              <Plus className="h-3.5 w-3.5" />
+              <Plus className="h-4 w-4" />
               Add tag
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-64 p-2" align="start">
-            {isLoading ? (
-              <div className="flex items-center justify-center py-4">
-                <Loader2 className="h-4 w-4 animate-spin" />
+          <PopoverContent className="w-80 p-0 shadow-lg border-border/40" align="start">
+            <div className="flex flex-col">
+              {/* Header */}
+              <div className="px-4 py-3 border-b border-border/40 bg-muted/30">
+                <h3 className="text-sm font-medium text-foreground">Select tags</h3>
+                <p className="text-xs text-muted-foreground mt-0.5">Choose existing tags or create new ones</p>
               </div>
-            ) : (
-              <>
-                <ScrollArea className="max-h-48">
-                  <div className="space-y-1">
-                    {tags
-                      .filter((tag) => !selectedTagIds.includes(tag.id))
-                      .map((tag) => (
-                        <button
-                          key={tag.id}
-                          type="button"
-                          onClick={() => {
-                            toggleTag(tag.id);
-                            setOpen(false);
-                          }}
-                          className={cn(
-                            "w-full flex items-center gap-2 px-2 py-1.5 rounded-lg text-sm",
-                            "hover:bg-muted transition-colors text-left"
-                          )}
-                        >
-                          <div
-                            className="w-2.5 h-2.5 rounded-full"
-                            style={{
-                              backgroundColor: tag.color || "var(--accent)",
-                            }}
-                          />
-                          {tag.name}
-                        </button>
-                      ))}
-                  </div>
-                </ScrollArea>
 
-                <div className="border-t mt-2 pt-2">
-                  <div className="flex items-center gap-2">
-                    <Input
-                      placeholder="New tag..."
-                      value={newTagName}
-                      onChange={(e) => setNewTagName(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter") {
-                          e.preventDefault();
-                          handleCreateTag();
-                        }
-                      }}
-                      className="h-8 text-sm"
-                    />
-                    <Button
-                      size="sm"
-                      className="h-8 w-8 p-0"
-                      onClick={handleCreateTag}
-                      disabled={!newTagName.trim() || createTagMutation.isPending}
-                    >
-                      {createTagMutation.isPending ? (
-                        <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      ) : (
-                        <Check className="h-3.5 w-3.5" />
-                      )}
-                    </Button>
+              {isLoading ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="flex flex-col items-center gap-3">
+                    <Loader2 className="h-5 w-5 animate-spin text-accent" />
+                    <span className="text-sm text-muted-foreground">Loading tags...</span>
                   </div>
                 </div>
-              </>
-            )}
+              ) : (
+                <>
+                  {/* Tag List */}
+                  <div className="max-h-64 overflow-y-auto">
+                    {tags.filter((tag) => !selectedTagIds.includes(tag.id)).length === 0 ? (
+                      <div className="px-4 py-8 text-center">
+                        <div className="inline-flex items-center justify-center w-10 h-10 rounded-full bg-muted mb-3">
+                          <Check className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                        <p className="text-sm text-muted-foreground font-medium">All tags added</p>
+                        <p className="text-xs text-muted-foreground/70 mt-1">Create a new tag below</p>
+                      </div>
+                    ) : (
+                      <div className="p-2">
+                        {tags
+                          .filter((tag) => !selectedTagIds.includes(tag.id))
+                          .map((tag) => (
+                            <button
+                              key={tag.id}
+                              type="button"
+                              onClick={() => {
+                                toggleTag(tag.id);
+                                setOpen(false);
+                              }}
+                              className={cn(
+                                "w-full flex items-center gap-3 px-3 py-2.5 rounded-md text-sm",
+                                "hover:bg-accent/5 transition-all duration-150 text-left group",
+                                "focus:outline-none focus:ring-2 focus:ring-accent/20 focus:bg-accent/5",
+                                "active:scale-[0.98]"
+                              )}
+                            >
+                              <div
+                                className="w-3 h-3 rounded-full shrink-0 ring-1 ring-white/20 shadow-sm"
+                                style={{
+                                  backgroundColor: tag.color || "var(--accent)",
+                                }}
+                              />
+                              <span className="flex-1 text-foreground truncate">{tag.name}</span>
+                              <Plus className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity duration-150" />
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Create New Tag */}
+                  <div className="border-t border-border/40 p-4 bg-background/50">
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1">
+                        <Input
+                          placeholder="Create new tag..."
+                          value={newTagName}
+                          onChange={(e) => setNewTagName(e.target.value)}
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              handleCreateTag();
+                            }
+                          }}
+                          className="h-10 text-sm border-border/40 focus:border-accent/40 focus:ring-accent/20"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        className="h-10 w-10 p-0 shrink-0"
+                        onClick={handleCreateTag}
+                        disabled={!newTagName.trim() || createTagMutation.isPending}
+                      >
+                        {createTagMutation.isPending ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Check className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
           </PopoverContent>
         </Popover>
       )}

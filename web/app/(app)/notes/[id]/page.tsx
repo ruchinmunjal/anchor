@@ -16,7 +16,7 @@ import {
 import { getNote, createNote, updateNote, deleteNote } from "@/lib/api/notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import {
   Dialog,
   DialogContent,
@@ -34,7 +34,8 @@ import {
 import { TagSelector } from "@/components/app/tag-selector";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { CreateNoteDto, UpdateNoteDto } from "@/lib/types";
+import type { CreateNoteDto, UpdateNoteDto, Note } from "@/lib/types";
+import { isStoredContentEmpty } from "@/lib/quill";
 
 export default function NoteEditorPage() {
   const params = useParams();
@@ -58,12 +59,34 @@ export default function NoteEditorPage() {
     tagIds: string[];
   } | null>(null);
 
-  // Fetch existing note
-  const { data: note, isLoading } = useQuery({
+  // Try to get note from sessionStorage first (passed from note card)
+  const [noteFromStorage, setNoteFromStorage] = useState<Note | null>(null);
+
+  useEffect(() => {
+    if (isNew || typeof window === "undefined") return;
+
+    try {
+      const stored = sessionStorage.getItem(`note-${noteId}`);
+      if (stored) {
+        const note = JSON.parse(stored) as Note;
+        // Clean up after reading
+        sessionStorage.removeItem(`note-${noteId}`);
+        setNoteFromStorage(note);
+      }
+    } catch (error) {
+      console.error("Failed to parse note from sessionStorage:", error);
+    }
+  }, [noteId, isNew]);
+
+  // Fetch existing note (only if not in sessionStorage)
+  const { data: noteFromApi, isLoading } = useQuery({
     queryKey: ["notes", noteId],
     queryFn: () => getNote(noteId),
-    enabled: !isNew,
+    enabled: !isNew && !noteFromStorage,
   });
+
+  // Use note from storage if available, otherwise use API data
+  const note = isNew ? null : noteFromStorage || noteFromApi;
 
   // Initialize form with note data
   useEffect(() => {
@@ -71,12 +94,13 @@ export default function NoteEditorPage() {
       setTitle(note.title);
       setContent(note.content || "");
       setIsPinned(note.isPinned);
-      setSelectedTagIds(note.tags?.map((t) => t.id) || []);
+      const tagIds = note.tagIds || note.tags?.map((t) => t.id) || [];
+      setSelectedTagIds(tagIds);
       lastSavedRef.current = {
         title: note.title,
         content: note.content || "",
         isPinned: note.isPinned,
-        tagIds: note.tags?.map((t) => t.id) || [],
+        tagIds,
       };
     }
   }, [note]);
@@ -124,7 +148,7 @@ export default function NoteEditorPage() {
   // Check for unsaved changes
   const checkUnsavedChanges = useCallback(() => {
     if (!lastSavedRef.current && isNew) {
-      return title.trim() !== "" || content.trim() !== "";
+      return title.trim() !== "" || !isStoredContentEmpty(content);
     }
     if (!lastSavedRef.current) return false;
 
@@ -133,7 +157,7 @@ export default function NoteEditorPage() {
       content !== lastSavedRef.current.content ||
       isPinned !== lastSavedRef.current.isPinned ||
       JSON.stringify(selectedTagIds.sort()) !==
-        JSON.stringify(lastSavedRef.current.tagIds.sort())
+      JSON.stringify(lastSavedRef.current.tagIds.sort())
     );
   }, [title, content, isPinned, selectedTagIds, isNew]);
 
@@ -143,7 +167,7 @@ export default function NoteEditorPage() {
 
   // Auto-save with debounce
   const save = useCallback(() => {
-    if (!title.trim() && !content.trim()) return;
+    if (!title.trim() && isStoredContentEmpty(content)) return;
 
     if (isNew) {
       createMutation.mutate({
@@ -172,7 +196,7 @@ export default function NoteEditorPage() {
 
     saveTimeoutRef.current = setTimeout(() => {
       save();
-    }, 2000); // Auto-save after 2 seconds of inactivity
+    }, 1000); // Auto-save after 1 second of inactivity
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -201,7 +225,8 @@ export default function NoteEditorPage() {
     setIsPinned((prev) => !prev);
   };
 
-  if (isLoading && !isNew) {
+  // Only show loading if we don't have note from storage and are fetching from API
+  if (isLoading && !isNew && !noteFromStorage) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-3">
@@ -320,9 +345,11 @@ export default function NoteEditorPage() {
             onChange={(e) => setTitle(e.target.value)}
             placeholder="Title"
             className={cn(
-              "border-0 bg-transparent text-3xl lg:text-4xl font-bold",
+              "!bg-transparent border-0 shadow-none rounded-none",
+              "px-0 h-auto py-2 mb-4",
+              "text-3xl lg:text-4xl font-bold",
               "placeholder:text-muted-foreground/40",
-              "focus-visible:ring-0 px-0 h-auto py-2 mb-4"
+              "focus-visible:ring-0 focus-visible:ring-offset-0 focus-visible:border-0"
             )}
           />
 
@@ -335,17 +362,11 @@ export default function NoteEditorPage() {
           </div>
 
           {/* Content */}
-          <Textarea
+          <RichTextEditor
             value={content}
-            onChange={(e) => setContent(e.target.value)}
+            onChange={setContent}
             placeholder="Start typing your thoughts..."
-            className={cn(
-              "w-full min-h-[calc(100vh-320px)] resize-none",
-              "border-0 bg-transparent",
-              "text-base lg:text-lg leading-relaxed",
-              "placeholder:text-muted-foreground/40",
-              "focus-visible:ring-0 px-0 py-0"
-            )}
+            className={cn("w-full", "min-h-[calc(100vh-320px)]")}
           />
         </div>
 

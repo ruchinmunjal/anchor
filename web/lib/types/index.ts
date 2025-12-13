@@ -11,6 +11,7 @@ export interface Note {
   createdAt: string;
   updatedAt: string;
   userId: string;
+  tagIds?: string[];
   tags?: Tag[];
 }
 
