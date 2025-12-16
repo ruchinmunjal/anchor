@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { GuestGuard } from "@/components/auth";
+import { GuestGuard } from "@/features/auth";
 
 export default function AuthLayout({ children }: { children: ReactNode }) {
   return (

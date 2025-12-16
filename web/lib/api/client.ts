@@ -1,5 +1,5 @@
 import ky from "ky";
-import { getAccessToken, clearAccessToken } from "@/lib/stores/auth-store";
+import { getAccessToken, clearAccessToken } from "@/features/auth";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 

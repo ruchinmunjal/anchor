@@ -11,12 +11,17 @@ import {
   Loader2,
   AlertTriangle,
   Check,
-  Cloud,
 } from "lucide-react";
-import { getNote, createNote, updateNote, deleteNote } from "@/lib/api/notes";
+import {
+  getNote,
+  createNote,
+  updateNote,
+  deleteNote,
+  isStoredContentEmpty,
+} from "@/features/notes";
+import type { CreateNoteDto, UpdateNoteDto, Note } from "@/features/notes";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { RichTextEditor } from "@/components/editor/rich-text-editor";
 import {
   Dialog,
   DialogContent,
@@ -31,15 +36,14 @@ import {
   TooltipTrigger,
   TooltipProvider,
 } from "@/components/ui/tooltip";
-import { TagSelector } from "@/components/app/tag-selector";
 import {
+  RichTextEditor,
   NoteBackgroundPicker,
   NoteBackground,
-} from "@/components/note-backgrounds";
+} from "@/features/notes";
+import { TagSelector } from "@/features/tags";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import type { CreateNoteDto, UpdateNoteDto, Note } from "@/lib/types";
-import { isStoredContentEmpty } from "@/lib/quill";
 
 export default function NoteEditorPage() {
   const params = useParams();
@@ -201,7 +205,7 @@ export default function NoteEditorPage() {
         tagIds: selectedTagIds,
       });
     }
-  }, [title, content, isPinned, selectedTagIds, isNew, createMutation, updateMutation]);
+  }, [title, content, isPinned, selectedTagIds, background, isNew, createMutation, updateMutation]);
 
   // Debounced auto-save
   useEffect(() => {

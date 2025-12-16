@@ -1,30 +1,26 @@
 # Anchor
 
-Anchor is an offline‑first, self‑hostable note‑taking application. It focuses on speed, privacy, simplicity, and reliability across mobile and web. Notes are stored locally, editable offline, and synced across devices when online.  
+Anchor is an offline-first, self-hostable note-taking application. It focuses on speed, privacy, simplicity, and reliability across mobile and web. Notes are stored locally, editable offline, and synced across devices when online.
 
-This repository includes:  
-- Mobile App (Flutter)  
-- Web App (Next.js)  
-- Backend Server (Nest.js)  
-- PostgreSQL database  
-- Docker Compose for self‑hosting  
+This repository includes:
+- **Mobile App** (Flutter)
+- **Web App** (Next.js)
+- **Backend Server** (Nest.js)
+- **Docker Compose** for self-hosting
 
----
 
-## Features (MVP)
+## Features
 
-- Create, edit, delete notes  
-- Rich text formatting (bold, italic, underline, headings, lists, checkboxes)  
-- Pin and archive notes  
-- Color‑coded notes  
-- Search notes locally and remotely  
-- Offline‑first support with local storage  
-- Automatic sync when online  
-- Conflict resolution (last‑write‑wins)  
-- Secure login with JWT  
-- Self‑hostable with Docker  
+- **Rich Text Editor** - Create and edit notes with powerful formatting (bold, italic, underline, headings, lists, checkboxes)
+- **Tags System** - Organize notes with custom tags and colors
+- **Note Backgrounds** - Customize notes with solid colors and patterns
+- **Pin Notes** - Pin important notes for quick access
+- **Search** - Search notes locally by title or content
+- **Trash** - Soft delete notes with recovery period
+- **Offline-First** - All edits work offline with local storage
+- **Automatic Sync** - Sync changes across devices when online
+- **Dark Mode** - Beautiful dark and light themes
 
----
 
 ## Tech Stack
 
@@ -39,14 +35,15 @@ This repository includes:
 - Flutter Quill (rich text editor)
 
 ### Web (Next.js)
-- Next.js (App Router)
-- React 18
-- React Query (server state management and sync)
-- IndexedDB (offline data storage)
-- Service Worker for PWA offline mode
-- TypeScript
-- Zustand or React Context (local UI state)
-- Quill.js or Tiptap (rich text editor for web)
+- Next.js 16 (App Router)
+- Tailwind CSS (styling)
+- shadcn/ui (UI components, Radix UI primitives)
+- Zustand (state management)
+- TanStack Query (data fetching)
+- ky (network client)
+- react-quill-new (rich text editor)
+- Lucide React (icons)
+- date-fns (date formatting)
 
 ### Backend (Nest.js)
 - Nest.js (modular server framework)
@@ -56,110 +53,65 @@ This repository includes:
 - REST API endpoints
 - Class Validator (input validation)
 - Helmet and rate limiting (security)
-- Docker support
 
-### Deployment & DevOps
-- Docker  
-- Docker Compose  
-- Nginx reverse proxy (optional)  
-- Environment‑based configuration  
-- Docker volumes for persistent data  
 
----
+## Self-Hosting With Docker
 
-## Project Structure
-
-```
-anchor/
-├── mobile/        Flutter app
-├── web/           Next.js web app
-├── server/        Nest.js backend
-├── docker/        Docker Compose and configs
-├── docs/          Documentation
-└── README.md
-```
-
----
-
-## Getting Started
-
-### Prerequisites
-- Git  
-- Docker and Docker Compose  
-- Node.js (for web and server development)  
-- Flutter SDK (for mobile development)  
-
----
-
-## Self‑Hosting With Docker
-
-1. Clone the project:
-   ```
-   git clone https://github.com/yourusername/anchor.git
+1. **Clone the project:**
+   ```bash
+   git clone https://github.com/zhfahim/anchor.git
    cd anchor
    ```
 
-2. Copy environment variable templates:
+2. **Copy environment variable templates:**
    - `server/.env.example` → `server/.env`
    - `web/.env.example` → `web/.env`
+   
+   Set the following variables:
+   - `DATABASE_URL` - PostgreSQL connection string
+   - `JWT_SECRET` - Secret key for JWT tokens
+   - `NEXT_PUBLIC_API_URL` - Backend API URL (for web app)
 
-   Set:
-   - `DATABASE_URL`
-   - `JWT_SECRET`
-   - API URLs for web and mobile
-
-3. Start the stack:
-   ```
+3. **Start the stack:**
+   ```bash
    docker-compose up --build
    ```
 
-4. Access the services:
-   - API Server: http://localhost:3000
-   - Web App: http://localhost:4000
+4. **Access the services:**
+   - API Server: http://localhost:3001
+   - Web App: http://localhost:3000
 
----
-
-## Platform Details
-
-### Offline and Sync Strategy
-
-- Drift (mobile) and IndexedDB (web) store notes locally.  
-- All edits work offline.  
-- Sync is triggered automatically on connectivity change or at periodic intervals.  
-- Conflicts use last‑write‑wins logic.  
-
----
 
 ## Roadmap
 
-Future planned features (not in MVP):
+Future planned features:
 
-- Media attachments (images, PDFs, recordings)  
-- Labels and tags  
-- Reminders and notifications  
-- End‑to‑end encryption  
-- Real‑time collaboration  
-- Multi‑user shared notes  
-- Browser extension  
+- Media attachments (images, PDFs, recordings)
+- Reminders and notifications
+- End-to-end encryption
+- Real-time collaboration
+- Multi-user shared notes
 
----
 
 ## Contributing
 
-1. Fork the repository  
+1. Fork the repository
 2. Create a feature branch:
-   ```
+   ```bash
    git checkout -b feature/your-feature
    ```
-3. Commit changes:
-   ```
+3. Make your changes
+4. Ensure builds pass:
+   - Web: `cd web && pnpm build`
+   - Server: `cd server && pnpm build`
+5. Commit changes:
+   ```bash
    git commit -m "Describe your change"
    ```
-4. Push and create a Pull Request  
+6. Push and create a Pull Request
 
----
 
 ## License
 
-Anchor will be released under an open‑source license.  
+Anchor will be released under an open-source license.  
 License information will be added soon.

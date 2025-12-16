@@ -1,29 +1,23 @@
 "use client";
 
 import { useState, useEffect, type ReactNode } from "react";
-import { Sidebar } from "@/components/app/sidebar";
-import { AuthGuard } from "@/components/auth";
+import { Sidebar } from "@/components/layout";
+import { AuthGuard } from "@/features/auth";
 import { cn } from "@/lib/utils";
 
 export default function AppLayout({ children }: { children: ReactNode }) {
-  const [isCollapsed, setIsCollapsed] = useState(false);
-  const [mounted, setMounted] = useState(false);
-
-  // Load preference from localStorage
-  useEffect(() => {
-    setMounted(true);
+  const [isCollapsed, setIsCollapsed] = useState(() => {
+    if (typeof window === "undefined") return false;
     const stored = localStorage.getItem("sidebar-collapsed");
-    if (stored !== null) {
-      setIsCollapsed(stored === "true");
-    }
-  }, []);
+    return stored === "true";
+  });
 
   // Save preference to localStorage
   useEffect(() => {
-    if (mounted) {
+    if (typeof window !== "undefined") {
       localStorage.setItem("sidebar-collapsed", String(isCollapsed));
     }
-  }, [isCollapsed, mounted]);
+  }, [isCollapsed]);
 
   const toggleCollapsed = () => setIsCollapsed((prev) => !prev);
 

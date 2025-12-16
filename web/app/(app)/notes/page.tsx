@@ -15,16 +15,14 @@ import {
   List,
   Pin
 } from "lucide-react";
-import { getNotes } from "@/lib/api/notes";
-import { getTags } from "@/lib/api/tags";
-import { Header } from "@/components/app/header";
-import { NoteCard } from "@/components/app/note-card";
+import { getNotes, deltaToFullPlainText } from "@/features/notes";
+import { getTags } from "@/features/tags";
+import { Header } from "@/components/layout";
+import { NoteCard } from "@/features/notes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
-import { cn } from "@/lib/utils";
 import Link from "next/link";
-import { deltaToFullPlainText } from "@/lib/quill";
 
 const masonryBreakpoints = {
   default: 4,
@@ -42,15 +40,14 @@ export default function NotesPage() {
   const searchParams = useSearchParams();
   const tagIdParam = searchParams.get("tagId");
   const [searchQuery, setSearchQuery] = useState("");
-  const [viewMode, setViewMode] = useState<ViewMode>("masonry");
-
-  // Load view mode preference from localStorage
-  useEffect(() => {
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    if (typeof window === "undefined") return "masonry";
     const saved = localStorage.getItem("notes-view-mode") as ViewMode | null;
     if (saved && ["masonry", "grid", "list"].includes(saved)) {
-      setViewMode(saved);
+      return saved;
     }
-  }, []);
+    return "masonry";
+  });
 
   // Save view mode preference
   useEffect(() => {
@@ -100,13 +97,6 @@ export default function NotesPage() {
     ? tags.find((tag) => tag.id === tagIdParam)
     : null;
 
-  // Calculate stats
-  const stats = useMemo(() => {
-    const totalNotes = notesWithTags.length;
-    const pinnedCount = notesWithTags.filter((n) => n.isPinned).length;
-    const taggedCount = notesWithTags.filter((n) => n.tags && n.tags.length > 0).length;
-    return { totalNotes, pinnedCount, taggedCount };
-  }, [notesWithTags]);
 
   const renderNotesGrid = (notesToRender: typeof filteredNotes, startIndex = 0) => {
     if (viewMode === "list") {

@@ -2,8 +2,14 @@
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Trash2, RotateCcw, Loader2, AlertTriangle } from "lucide-react";
-import { getTrashedNotes, restoreNote, permanentDeleteNote } from "@/lib/api/notes";
-import { Header } from "@/components/app/header";
+import {
+  getTrashedNotes,
+  restoreNote,
+  permanentDeleteNote,
+  deltaToFullPlainText,
+} from "@/features/notes";
+import type { Note } from "@/features/notes";
+import { Header } from "@/components/layout";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,8 +24,6 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useState } from "react";
-import type { Note } from "@/lib/types";
-import { deltaToFullPlainText } from "@/lib/quill";
 
 export default function TrashPage() {
   const [searchQuery, setSearchQuery] = useState("");

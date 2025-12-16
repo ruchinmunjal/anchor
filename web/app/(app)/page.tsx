@@ -4,15 +4,14 @@ import { useState, useMemo } from "react";
 import { useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Search, Loader2 } from "lucide-react";
-import { getNotes } from "@/lib/api/notes";
-import { getTags } from "@/lib/api/tags";
-import { Header } from "@/components/app/header";
-import { NoteCard } from "@/components/app/note-card";
+import { getNotes, deltaToFullPlainText } from "@/features/notes";
+import { getTags } from "@/features/tags";
+import { Header } from "@/components/layout";
+import { NoteCard } from "@/features/notes";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { deltaToFullPlainText } from "@/lib/quill";
 
 export default function NotesPage() {
   const searchParams = useSearchParams();
