@@ -24,10 +24,11 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
   void initState() {
     super.initState();
     _animController = AnimationController(
-      duration: const Duration(milliseconds: 300),
+      duration: const Duration(milliseconds: 200),
       vsync: this,
     );
     _fadeAnim = CurvedAnimation(parent: _animController, curve: Curves.easeOut);
+    // Start animation immediately but don't block on it
     _animController.forward();
   }
 
@@ -186,8 +187,7 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
           child: InkWell(
             onTap: enabled ? onTap : null,
             borderRadius: BorderRadius.circular(12),
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
+            child: Container(
               padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
               decoration: BoxDecoration(
                 color: isSelected
@@ -296,20 +296,31 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
               if (tags.isEmpty) {
                 return _buildEmptyTagsState(theme);
               }
-              return Column(
-                children: tags.map((tag) {
+              return ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: tags.length,
+                itemBuilder: (context, index) {
+                  final tag = tags[index];
                   final isSelected = selectedTagId == tag.id;
                   final tagColor = parseTagColor(
                     tag.color,
                     fallback: theme.colorScheme.primary,
                   );
-                  return _buildTagItem(
+                  return _TagItemWidget(
                     tag: tag,
                     isSelected: isSelected,
                     tagColor: tagColor,
                     theme: theme,
+                    onTap: () {
+                      ref
+                          .read(selectedTagFilterProvider.notifier)
+                          .select(tag.id);
+                      Navigator.pop(context);
+                    },
+                    onLongPress: () => _showTagOptionsSheet(tag),
                   );
-                }).toList(),
+                },
               );
             },
             loading: () => const Padding(
@@ -331,65 +342,6 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
           duration: const Duration(milliseconds: 200),
         ),
       ],
-    );
-  }
-
-  Widget _buildTagItem({
-    required Tag tag,
-    required bool isSelected,
-    required Color tagColor,
-    required ThemeData theme,
-  }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 2),
-      child: Material(
-        color: Colors.transparent,
-        borderRadius: BorderRadius.circular(10),
-        child: InkWell(
-          onTap: () {
-            ref.read(selectedTagFilterProvider.notifier).select(tag.id);
-            Navigator.pop(context);
-          },
-          onLongPress: () => _showTagOptionsSheet(tag),
-          borderRadius: BorderRadius.circular(10),
-          child: AnimatedContainer(
-            duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-            decoration: BoxDecoration(
-              color: isSelected
-                  ? tagColor.withValues(alpha: 0.12)
-                  : Colors.transparent,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Row(
-              children: [
-                Icon(LucideIcons.hash, size: 16, color: tagColor),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    tag.name,
-                    style: theme.textTheme.bodyMedium?.copyWith(
-                      fontWeight: isSelected
-                          ? FontWeight.w600
-                          : FontWeight.w500,
-                      color: isSelected
-                          ? tagColor
-                          : theme.colorScheme.onSurface.withValues(alpha: 0.8),
-                    ),
-                  ),
-                ),
-                Text(
-                  '${tag.noteCount}',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
     );
   }
 
@@ -1005,6 +957,75 @@ class _AppDrawerState extends ConsumerState<AppDrawer>
                   ),
                 ],
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _TagItemWidget extends StatelessWidget {
+  final Tag tag;
+  final bool isSelected;
+  final Color tagColor;
+  final ThemeData theme;
+  final VoidCallback onTap;
+  final VoidCallback onLongPress;
+
+  const _TagItemWidget({
+    required this.tag,
+    required this.isSelected,
+    required this.tagColor,
+    required this.theme,
+    required this.onTap,
+    required this.onLongPress,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 2),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(10),
+        child: InkWell(
+          onTap: onTap,
+          onLongPress: onLongPress,
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+            decoration: BoxDecoration(
+              color: isSelected
+                  ? tagColor.withValues(alpha: 0.12)
+                  : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Icon(LucideIcons.hash, size: 16, color: tagColor),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    tag.name,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      fontWeight: isSelected
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      color: isSelected
+                          ? tagColor
+                          : theme.colorScheme.onSurface.withValues(alpha: 0.8),
+                    ),
+                  ),
+                ),
+                Text(
+                  '${tag.noteCount}',
+                  style: theme.textTheme.bodySmall?.copyWith(
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
             ),
           ),
         ),

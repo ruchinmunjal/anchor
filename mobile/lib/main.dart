@@ -29,7 +29,6 @@ class AnchorApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
-      debugShowCheckedModeBanner: false,
       localizationsDelegates: const [FlutterQuillLocalizations.delegate],
       supportedLocales: const [Locale('en', '')],
     );
