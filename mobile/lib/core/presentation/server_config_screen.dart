@@ -128,16 +128,18 @@ class _ServerConfigScreenState extends ConsumerState<ServerConfigScreen> {
       final response = await dio.get('$url/api/health');
 
       if (response.statusCode == 200 && response.data['app'] == 'anchor') {
-        // Server is valid, save the URL
-        await ref.read(serverConfigProvider.notifier).setServerUrl(url);
-        // Navigate back if we came from another screen (editing mode)
+        final shouldPop = widget.initialUrl != null;
+        final notifier = ref.read(serverConfigProvider.notifier);
+
         if (mounted) {
-          if (widget.initialUrl != null) {
+          if (shouldPop) {
             context.pop();
           } else {
             context.go(AppRoutes.login);
           }
         }
+
+        await notifier.setServerUrl(url);
       } else {
         setState(() {
           _error = 'Invalid server response. Is this an Anchor server?';

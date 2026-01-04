@@ -388,7 +388,7 @@ class _NoteEditScreenState extends ConsumerState<NoteEditScreen> {
 
     return PopScope(
       onPopInvokedWithResult: (didPop, result) async {
-        if (didPop && !_isDeleted) {
+        if (didPop && !_isDeleted && _isEditing) {
           await _saveNote();
         }
       },
