@@ -1,4 +1,4 @@
-import ky from "ky";
+import ky, { HTTPError } from "ky";
 import { getAccessToken, clearAccessToken } from "@/features/auth";
 
 // Create the API client with interceptors
@@ -12,6 +12,29 @@ export const api = ky.create({
         if (token) {
           request.headers.set("Authorization", `Bearer ${token}`);
         }
+      },
+    ],
+    beforeError: [
+      async (error) => {
+        // Extract error message from API response body
+        if (error instanceof HTTPError) {
+          try {
+            const errorBody = (await error.response.json()) as {
+              message?: string | string[];
+            };
+            // Handle both string messages and array of validation errors
+            if (errorBody.message) {
+              if (Array.isArray(errorBody.message)) {
+                error.message = errorBody.message.join(", ");
+              } else {
+                error.message = errorBody.message;
+              }
+            }
+          } catch {
+            // If we can't parse the error body, keep the original message
+          }
+        }
+        return error;
       },
     ],
     afterResponse: [

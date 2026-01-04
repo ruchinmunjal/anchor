@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Plus, Check, X, Loader2 } from "lucide-react";
-import { HTTPError } from "ky";
 import { getTags, createTag, generateRandomTagColor } from "@/features/tags";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -44,19 +43,8 @@ export function TagSelector({
       setNewTagName("");
       setErrorMessage(null);
     },
-    onError: async (error: Error) => {
-      let message = "Failed to create tag";
-      if (error instanceof HTTPError) {
-        try {
-          const errorBody = await error.response.json();
-          message = errorBody.message || message;
-        } catch {
-          // If we can't parse the error, use the default message
-        }
-      } else if (error.message) {
-        message = error.message;
-      }
-      setErrorMessage(message);
+    onError: (error: Error) => {
+      setErrorMessage(error.message || "Failed to create tag");
     },
   });
 

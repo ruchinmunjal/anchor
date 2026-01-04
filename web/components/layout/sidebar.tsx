@@ -50,7 +50,6 @@ import { Input } from "@/components/ui/input";
 import { useTheme } from "next-themes";
 import { useAuth } from "@/features/auth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { HTTPError } from "ky";
 import { getTags, updateTag, deleteTag, type Tag as TagType } from "@/features/tags";
 
 interface SidebarProps {
@@ -94,19 +93,8 @@ export function Sidebar({
       setRenameValue("");
       setRenameError(null);
     },
-    onError: async (error: Error) => {
-      let message = "Failed to rename tag";
-      if (error instanceof HTTPError) {
-        try {
-          const errorBody = await error.response.json();
-          message = errorBody.message || message;
-        } catch {
-          // If we can't parse the error, use the default message
-        }
-      } else if (error.message) {
-        message = error.message;
-      }
-      setRenameError(message);
+    onError: (error: Error) => {
+      setRenameError(error.message || "Failed to rename tag");
     },
   });
 
