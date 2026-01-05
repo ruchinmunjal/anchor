@@ -66,10 +66,12 @@ function toggleBlock(quill: QuillInstance, key: "blockquote" | "code-block") {
 }
 
 interface QuillToolbarProps {
-  quill: QuillInstance | null;
+  getQuill: () => QuillInstance | null;
+  isFocused: boolean;
+  updateKey: number;
 }
 
-export function QuillToolbar({ quill }: QuillToolbarProps) {
+export function QuillToolbar({ getQuill, isFocused, updateKey }: QuillToolbarProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const [format, setFormat] = useState<Record<string, any>>({});
   const [canUndo, setCanUndo] = useState(false);
@@ -79,27 +81,29 @@ export function QuillToolbar({ quill }: QuillToolbarProps) {
   const [linkText, setLinkText] = useState("");
   const [linkUrl, setLinkUrl] = useState("");
 
+  // Update toolbar state when parent signals a change (via updateKey)
+  // This avoids subscribing to Quill events directly, which caused focus issues
   useEffect(() => {
-    if (!quill) return;
+    const quill = getQuill();
+    if (!quill || !isFocused) {
+      // Reset format state when editor loses focus or quill not available
+      if (!isFocused) {
+        setFormat({});
+        setCanUndo(false);
+        setCanRedo(false);
+      }
+      return;
+    }
 
-    const update = () => {
-      setFormat(quill.getFormat?.() ?? {});
-      const hist = quill.history;
-      // Quill history stacks are arrays (best-effort; internal API)
-      setCanUndo(Boolean(hist?.stack?.undo?.length));
-      setCanRedo(Boolean(hist?.stack?.redo?.length));
-    };
+    setFormat(quill.getFormat?.() ?? {});
+    const hist = quill.history;
+    // Quill history stacks are arrays (best-effort; internal API)
+    setCanUndo(Boolean(hist?.stack?.undo?.length));
+    setCanRedo(Boolean(hist?.stack?.redo?.length));
+  }, [getQuill, isFocused, updateKey]);
 
-    update();
-
-    quill.on?.("selection-change", update);
-    quill.on?.("text-change", update);
-
-    return () => {
-      quill.off?.("selection-change", update);
-      quill.off?.("text-change", update);
-    };
-  }, [quill]);
+  // Get quill instance for button handlers
+  const quill = getQuill();
 
   const headerLevel = useMemo(() => {
     const h = format.header;
@@ -118,11 +122,11 @@ export function QuillToolbar({ quill }: QuillToolbarProps) {
   const isQuote = Boolean(format.blockquote);
   const isCode = Boolean(format["code-block"]);
 
-  const groupClass = "flex items-center gap-1 rounded-xl bg-muted/50 p-1";
-  const dividerClass = "mx-2 h-6 w-px bg-border/60";
+  const groupClass = "flex items-center gap-1 rounded-xl bg-muted/50 p-1 shrink-0";
+  const dividerClass = "mx-2 h-6 w-px bg-border/60 shrink-0";
   const btnClass = (active?: boolean) =>
     cn(
-      "h-9 w-9 rounded-lg p-0",
+      "h-9 w-9 rounded-lg p-0 shrink-0",
       active ? "bg-accent/10 text-accent hover:bg-accent/15" : "text-muted-foreground hover:text-foreground",
     );
 
@@ -160,7 +164,7 @@ export function QuillToolbar({ quill }: QuillToolbarProps) {
 
   return (
     <>
-      <div className="mb-3 flex flex-wrap items-center">
+      <div className="mb-3 flex items-center overflow-x-auto scrollbar-none pb-1 -mx-4 px-4 lg:mx-0 lg:px-0 lg:overflow-visible lg:flex-wrap">
         <div className={groupClass}>
           <Button
             type="button"

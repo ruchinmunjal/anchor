@@ -1,7 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { useMemo, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import type { QuillDelta } from "@/features/notes";
 import { parseStoredContent, stringifyDelta } from "@/features/notes";
 import { QuillToolbar } from "./quill-toolbar";
@@ -30,9 +30,17 @@ export function RichTextEditor({
 }: RichTextEditorProps) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const quillRef = useRef<any>(null);
-  const [quill, setQuill] = useState<QuillInstance | null>(null);
+  // Store quill instance in ref to avoid re-renders that cause focus issues
+  const quillInstanceRef = useRef<QuillInstance | null>(null);
+  // Track focus state to enable/disable toolbar event subscriptions
+  const [isFocused, setIsFocused] = useState(false);
+  // Counter to force toolbar updates during typing/selection changes
+  const [toolbarUpdateKey, setToolbarUpdateKey] = useState(0);
 
   const deltaValue: QuillDelta = useMemo(() => parseStoredContent(value), [value]);
+
+  // Get quill instance from ref - callable by toolbar
+  const getQuillInstance = useCallback(() => quillInstanceRef.current, []);
 
   const modules = useMemo(
     () => ({
@@ -63,7 +71,13 @@ export function RichTextEditor({
 
   return (
     <div className={className}>
-      {!readOnly && <QuillToolbar quill={quill} />}
+      {!readOnly && (
+        <QuillToolbar
+          getQuill={getQuillInstance}
+          isFocused={isFocused}
+          updateKey={toolbarUpdateKey}
+        />
+      )}
       <div className="anchor-quill">
         <ReactQuill
           ref={quillRef}
@@ -84,6 +98,14 @@ export function RichTextEditor({
             // Always store canonical JSON as { ops: [...] }
             const next = stringifyDelta(editor.getContents());
             onChange(next);
+            // Trigger toolbar update for format changes during typing
+            setToolbarUpdateKey((k) => k + 1);
+          }}
+          onChangeSelection={() => {
+            // Trigger toolbar update when selection changes (for format state)
+            if (isFocused) {
+              setToolbarUpdateKey((k) => k + 1);
+            }
           }}
           modules={modules}
           formats={formats}
@@ -92,7 +114,13 @@ export function RichTextEditor({
           onFocus={() => {
             if (readOnly) return;
             const q = quillRef.current?.getEditor?.();
-            if (q) setQuill(q);
+            if (q) {
+              quillInstanceRef.current = q;
+              setIsFocused(true);
+            }
+          }}
+          onBlur={() => {
+            setIsFocused(false);
           }}
         />
       </div>

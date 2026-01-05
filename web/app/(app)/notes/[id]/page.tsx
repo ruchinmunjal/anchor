@@ -110,6 +110,9 @@ export default function NoteEditorPage() {
   const createMutation = useMutation({
     mutationFn: (data: CreateNoteDto) => createNote(data),
     onSuccess: (newNote) => {
+      // Pre-populate the cache with the new note data before navigation
+      // This prevents the loading state when the component remounts with the new URL
+      queryClient.setQueryData(["notes", newNote.id], newNote);
       queryClient.invalidateQueries({ queryKey: ["notes"] });
       queryClient.invalidateQueries({ queryKey: ["tags"] });
       toast.success("Note created");
