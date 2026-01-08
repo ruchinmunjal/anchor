@@ -1,5 +1,5 @@
 {
-  "template": "#{{CHANGELOG}}\n\n## Contributors\n\n#{{CONTRIBUTORS}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}",
+  "template": "#{{CHANGELOG}}\n\n**Full Changelog**: #{{RELEASE_DIFF}}",
   "categories": [
     {
       "title": "## Features",
@@ -51,7 +51,7 @@
     }
   ],
   "trim_values": true,
-  "max_pull_requests": 1000,
+  "max_tags_to_fetch": 200,
   "max_back_track_time_days": 365,
   "pr_template": "- #{{TITLE}} by @#{{AUTHOR}} (#{{NUMBER}})",
   "commit_template": "- #{{TITLE}} by @#{{AUTHOR}}",
