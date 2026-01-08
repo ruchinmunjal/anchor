@@ -305,7 +305,9 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                           );
                           break;
                         case SortOption.title:
-                          compare = a.title.compareTo(b.title);
+                          compare = a.title.toLowerCase().compareTo(
+                            b.title.toLowerCase(),
+                          );
                           break;
                       }
                       return viewOptions.isAscending ? compare : -compare;
