@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_quill/flutter_quill.dart';
 import 'core/app_initializer.dart';
 import 'core/network/connectivity_provider.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
-import 'core/theme/theme_mode_provider.dart';
+import 'features/settings/presentation/controllers/theme_preferences_controller.dart';
 
 void main() async {
   await initializeApp();
@@ -29,7 +30,12 @@ class AnchorApp extends ConsumerWidget {
       darkTheme: AppTheme.darkTheme,
       themeMode: themeMode,
       routerConfig: router,
-      localizationsDelegates: const [FlutterQuillLocalizations.delegate],
+      localizationsDelegates: const [
+        GlobalMaterialLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        FlutterQuillLocalizations.delegate,
+      ],
       supportedLocales: const [Locale('en', '')],
     );
   }
