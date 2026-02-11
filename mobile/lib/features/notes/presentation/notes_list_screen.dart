@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_staggered_grid_view/flutter_staggered_grid_view.dart';
@@ -119,7 +121,7 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
               ],
             ),
           ),
-          child: RefreshIndicator(
+          child: RefreshIndicator.adaptive(
             onRefresh: _onRefresh,
             displacement: 20,
             edgeOffset: 120, // Position below the pinned app bar
@@ -153,9 +155,11 @@ class _NotesListScreenState extends ConsumerState<NotesListScreen> {
                   flexibleSpace: isSelectionMode
                       ? null
                       : FlexibleSpaceBar(
-                          titlePadding: const EdgeInsets.only(
+                          centerTitle: Platform.isIOS,
+                          titlePadding: EdgeInsets.only(
                             left: 56,
-                            bottom: 16,
+                            right: Platform.isIOS ? 56 : 0,
+                            bottom: 12,
                           ),
                           title: Text(
                             'Anchor',
