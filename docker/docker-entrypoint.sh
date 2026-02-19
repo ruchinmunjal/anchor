@@ -42,6 +42,13 @@ fi
 
 # Export for supervisord
 export DATABASE_URL JWT_SECRET
+export OIDC_ENABLED="${OIDC_ENABLED:-}"
+export OIDC_PROVIDER_NAME="${OIDC_PROVIDER_NAME:-}"
+export OIDC_ISSUER_URL="${OIDC_ISSUER_URL:-}"
+export OIDC_CLIENT_ID="${OIDC_CLIENT_ID:-}"
+export OIDC_CLIENT_SECRET="${OIDC_CLIENT_SECRET:-}"
+export DISABLE_INTERNAL_AUTH="${DISABLE_INTERNAL_AUTH:-}"
+export APP_URL="${APP_URL:-}"
 
 if [ "$USE_EMBEDDED_POSTGRES" = "1" ]; then
   echo "[anchor] Using embedded Postgres"
