@@ -8,6 +8,13 @@ import { JwtStrategy } from './jwt.strategy';
 import { TokenResolverService } from './token-resolver.service';
 import { AuthGuard } from './auth.guard';
 import { SettingsModule } from '../settings/settings.module';
+import { PrismaModule } from '../prisma/prisma.module';
+import { OidcService } from './oidc/oidc.service';
+import { OidcController } from './oidc/oidc.controller';
+import { OidcConfigService } from './oidc/oidc-config.service';
+import { OidcClientService } from './oidc/oidc-client.service';
+import { OidcStateService } from './oidc/oidc-state.service';
+import { OidcUserService } from './oidc/oidc-user.service';
 
 @Module({
   imports: [
@@ -21,9 +28,20 @@ import { SettingsModule } from '../settings/settings.module';
       inject: [ConfigService],
     }),
     SettingsModule,
+    PrismaModule,
   ],
-  controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, TokenResolverService, AuthGuard],
-  exports: [AuthService, JwtModule, TokenResolverService, AuthGuard],
+  controllers: [AuthController, OidcController],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    TokenResolverService,
+    AuthGuard,
+    OidcService,
+    OidcConfigService,
+    OidcClientService,
+    OidcStateService,
+    OidcUserService,
+  ],
+  exports: [AuthService, OidcConfigService, JwtModule, TokenResolverService, AuthGuard],
 })
 export class AuthModule { }

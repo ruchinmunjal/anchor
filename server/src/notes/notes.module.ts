@@ -13,4 +13,4 @@ import { AuthModule } from '../auth/auth.module';
   providers: [NotesService, NoteSharesService, NoteAccessService],
   exports: [NotesService, NoteSharesService, NoteAccessService],
 })
-export class NotesModule {}
+export class NotesModule { }
