@@ -17,13 +17,16 @@ set -eu
 : "${PG_PASSWORD:=password}"
 : "${PG_DATABASE:=anchor}"
 
-# Decide embedded vs external based on PG_HOST
-if [ -z "$PG_HOST" ]; then
-  USE_EMBEDDED_POSTGRES=1
-  DATABASE_URL="postgresql://${PG_USER}:${PG_PASSWORD}@127.0.0.1:${PG_PORT}/${PG_DATABASE}"
-else
+# Decide embedded vs external based on DATABASE_URL or PG_HOST
+if [ -n "${DATABASE_URL:-}" ]; then
+  USE_EMBEDDED_POSTGRES=0
+  echo "[anchor] DATABASE_URL provided directly"
+elif [ -n "${PG_HOST:-}" ]; then
   USE_EMBEDDED_POSTGRES=0
   DATABASE_URL="postgresql://${PG_USER}:${PG_PASSWORD}@${PG_HOST}:${PG_PORT}/${PG_DATABASE}"
+else
+  USE_EMBEDDED_POSTGRES=1
+  DATABASE_URL="postgresql://${PG_USER}:${PG_PASSWORD}@127.0.0.1:${PG_PORT}/${PG_DATABASE}"
 fi
 
 # Generate JWT_SECRET if not provided (persisted in /data for consistency)
@@ -52,6 +55,8 @@ export APP_URL="${APP_URL:-}"
 
 if [ "$USE_EMBEDDED_POSTGRES" = "1" ]; then
   echo "[anchor] Using embedded Postgres"
+elif [ -n "${DATABASE_URL:-}" ]; then
+  echo "[anchor] Using external Postgres via DATABASE_URL"
 else
   echo "[anchor] Using external Postgres: ${PG_HOST}:${PG_PORT}"
 fi

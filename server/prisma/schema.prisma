@@ -54,7 +54,7 @@ model Settings {
 model Note {
   id         String      @id @default(uuid())
   title      String
-  content    String?  
+  content    String?
   isPinned   Boolean     @default(false)
   isArchived Boolean     @default(false)
   background String?
@@ -68,31 +68,31 @@ model Note {
 }
 
 model Tag {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
   color     String?
-  isDeleted Boolean   @default(false)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   notes     Note[]
 
   @@unique([userId, name])
 }
 
 model NoteShare {
-  id              String         @id @default(uuid())
-  noteId          String
-  note            Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  id               String              @id @default(uuid())
+  noteId           String
+  note             Note                @relation(fields: [noteId], references: [id], onDelete: Cascade)
   sharedWithUserId String
-  sharedWithUser  User           @relation("SharedWith", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
-  permission      NoteSharePermission
-  sharedByUserId  String
-  sharedByUser    User           @relation("SharedBy", fields: [sharedByUserId], references: [id], onDelete: Cascade)
-  isDeleted       Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  sharedWithUser   User                @relation("SharedWith", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+  permission       NoteSharePermission
+  sharedByUserId   String
+  sharedByUser     User                @relation("SharedBy", fields: [sharedByUserId], references: [id], onDelete: Cascade)
+  isDeleted        Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@unique([noteId, sharedWithUserId])
   @@index([noteId])

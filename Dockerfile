@@ -1,7 +1,7 @@
 FROM node:24-alpine AS base
 
 # pnpm via corepack
-RUN corepack enable && corepack prepare pnpm@latest --activate
+RUN corepack enable && corepack prepare pnpm@9 --activate
 
 # Next.js on Alpine can need libc compatibility
 RUN apk add --no-cache libc6-compat
@@ -53,7 +53,7 @@ RUN pnpm build
 #
 # Runtime image (single container: postgres + api + web)
 #
-FROM postgres:18-alpine AS runner
+FROM postgres:18-alpine3.22 AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -81,7 +81,8 @@ COPY --from=web_builder /app/web/public ./web/public
 
 COPY docker/docker-entrypoint.sh /app/docker-entrypoint.sh
 COPY docker/supervisord.conf /etc/supervisord.conf
-RUN chmod +x /app/docker-entrypoint.sh
+RUN sed -i 's/\r$//' /app/docker-entrypoint.sh \
+  && chmod +x /app/docker-entrypoint.sh
 
 VOLUME ["/data"]
 
@@ -91,4 +92,5 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 --start-period=30s \
   CMD curl -f http://localhost:3000/api/health || exit 1
 
+USER root
 ENTRYPOINT ["/app/docker-entrypoint.sh"]
