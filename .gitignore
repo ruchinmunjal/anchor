@@ -1,5 +1,6 @@
 # Environment variable
 .env
+.env.*
 
 # OS
 .DS_Store
@@ -11,3 +12,5 @@ thumbs.db
 .idea/
 *.swp
 *.swo
+*.prod.yml
+

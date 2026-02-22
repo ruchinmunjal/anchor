@@ -24,62 +24,23 @@ enum NoteSharePermission {
   editor
 }
 
-enum AttachmentType {
-  image
-  audio
-}
-
-enum SyncEntityType {
-  note
-  tag
-  pin
-  attachments
-  reminder
-}
-
-enum ReminderRecurrence {
-  none
-  daily
-  weekly
-  monthly
-  yearly
-}
-
-enum SyncOp {
-  upsert
-  remove
-}
-
-enum RevisionCause {
-  edit
-  conflict
-  restore
-}
-
 model User {
-  id                   String           @id @default(uuid())
-  email                String           @unique
-  password             String?
-  name                 String
-  profileImage         String?
-  apiToken             String?          @unique
-  isAdmin              Boolean          @default(false)
-  status               UserStatus       @default(active)
-  oidcSubject          String?          @unique
-  createdAt            DateTime         @default(now())
-  updatedAt            DateTime         @updatedAt
-  notes                Note[]
-  tags                 Tag[]
-  sharedNotes          NoteShare[]      @relation("SharedBy")
-  notesSharedWithMe    NoteShare[]      @relation("SharedWith")
-  refreshTokens        RefreshToken[]
-  uploadedAttachments  NoteAttachment[]
-  notePins             NotePin[]
-  noteArchives         NoteArchive[]
-  syncState            SyncState?
-  changeLog            ChangeLog[]
-  noteRevisions        NoteRevision[]
-  noteReminders        NoteReminder[]
+  id                 String           @id @default(uuid())
+  email              String           @unique
+  password           String?
+  name               String
+  profileImage       String?
+  apiToken           String?          @unique
+  isAdmin            Boolean          @default(false)
+  status             UserStatus       @default(active)
+  oidcSubject        String?          @unique
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  notes              Note[]
+  tags               Tag[]
+  sharedNotes        NoteShare[]      @relation("SharedBy")
+  notesSharedWithMe  NoteShare[]      @relation("SharedWith")
+  refreshTokens      RefreshToken[]
 }
 
 model Settings {
@@ -91,94 +52,47 @@ model Settings {
 }
 
 model Note {
-  id          String      @id @default(uuid())
-  title       String
-  content     String?
-  background  String?
-  state       NoteState   @default(active)
-  version     Int         @default(1)
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-  stateChangedAt DateTime @default(now())
-  userId      String
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  tags        Tag[]
-  sharedWith  NoteShare[]
-  attachments NoteAttachment[]
-  pins        NotePin[]
-  archives    NoteArchive[]
-  reminders   NoteReminder[]
-  revisions   NoteRevision[]
-
-  @@index([userId])
-  @@index([state, stateChangedAt])
-}
-
-// A reminder belongs to the person, not the note: sharees each get their own.
-model NoteReminder {
+  id         String      @id @default(uuid())
+  title      String
+  content    String?
+  isPinned   Boolean     @default(false)
+  isArchived Boolean     @default(false)
+  background String?
+  state      NoteState   @default(active)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
   userId     String
-  noteId     String
-  remindAt   String // local wall clock, "YYYY-MM-DDTHH:mm"
-  recurrence ReminderRecurrence @default(none)
-  version    Int                @default(1)
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  user       User               @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note       Note               @relation(fields: [noteId], references: [id], onDelete: Cascade)
-
-  @@id([userId, noteId])
-  @@index([noteId])
-}
-
-model NotePin {
-  userId    String
-  noteId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-
-  @@id([userId, noteId])
-  @@index([noteId])
-}
-
-model NoteArchive {
-  userId    String
-  noteId    String
-  createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
-
-  @@id([userId, noteId])
-  @@index([noteId])
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tags       Tag[]
+  sharedWith NoteShare[]
 }
 
 model Tag {
-  id        String    @id @default(uuid())
+  id        String   @id @default(uuid())
   name      String
   color     String?
-  isDeleted Boolean   @default(false)
-  version   Int       @default(1)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  isDeleted Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
   userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   notes     Note[]
 
-  // (userId, name) uniqueness is enforced for active tags via a partial index in migration
+  @@unique([userId, name])
 }
 
 model NoteShare {
-  id              String         @id @default(uuid())
-  noteId          String
-  note            Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  id               String              @id @default(uuid())
+  noteId           String
+  note             Note                @relation(fields: [noteId], references: [id], onDelete: Cascade)
   sharedWithUserId String
-  sharedWithUser  User           @relation("SharedWith", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
-  permission      NoteSharePermission
-  sharedByUserId  String
-  sharedByUser    User           @relation("SharedBy", fields: [sharedByUserId], references: [id], onDelete: Cascade)
-  isDeleted       Boolean        @default(false)
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  sharedWithUser   User                @relation("SharedWith", fields: [sharedWithUserId], references: [id], onDelete: Cascade)
+  permission       NoteSharePermission
+  sharedByUserId   String
+  sharedByUser     User                @relation("SharedBy", fields: [sharedByUserId], references: [id], onDelete: Cascade)
+  isDeleted        Boolean             @default(false)
+  createdAt        DateTime            @default(now())
+  updatedAt        DateTime            @updatedAt
 
   @@unique([noteId, sharedWithUserId])
   @@index([noteId])
@@ -195,64 +109,4 @@ model RefreshToken {
 
   @@index([userId])
   @@index([token])
-}
-
-model SyncState {
-  userId           String @id
-  lastSeq          BigInt @default(0)
-  prunedThroughSeq BigInt @default(0)
-  user             User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // lastSeq is only advanced by next_sync_seq(uid, n).
-}
-
-model ChangeLog {
-  recipientUserId String
-  entityType      SyncEntityType
-  entityId        String
-  op              SyncOp
-  seq             BigInt
-  updatedAt       DateTime       @updatedAt
-  recipient       User           @relation(fields: [recipientUserId], references: [id], onDelete: Cascade)
-
-  // One row per (recipient, entity), re-stamped with a fresh seq on each
-  // change. No FK on entityId: rows outlive the entities they point at.
-  @@id([recipientUserId, entityType, entityId])
-  @@unique([recipientUserId, seq])
-  @@index([op, updatedAt])
-}
-
-model NoteRevision {
-  id           String        @id @default(uuid())
-  noteId       String
-  version      Int
-  title        String
-  content      String?
-  authorUserId String?
-  cause        RevisionCause
-  createdAt    DateTime      @default(now())
-  note         Note          @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  author       User?         @relation(fields: [authorUserId], references: [id], onDelete: SetNull)
-
-  @@index([noteId, createdAt(sort: Desc)])
-  @@index([createdAt])
-}
-
-model NoteAttachment {
-  id               String         @id @default(uuid())
-  noteId           String
-  uploadedByUserId String
-  type             AttachmentType
-  originalFilename String
-  storedFilename   String
-  mimeType         String
-  fileSize         Int
-  position         Int            @default(0)
-  createdAt        DateTime       @default(now())
-  updatedAt        DateTime       @updatedAt
-  note             Note           @relation(fields: [noteId], references: [id], onDelete: Cascade)
-  uploadedByUser   User           @relation(fields: [uploadedByUserId], references: [id], onDelete: Cascade)
-
-  @@index([noteId])
-  @@index([uploadedByUserId])
 }
