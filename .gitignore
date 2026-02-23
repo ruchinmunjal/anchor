@@ -14,3 +14,4 @@ thumbs.db
 *.swo
 *.prod.yml
 
+/.vs
